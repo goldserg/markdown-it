@@ -1,5 +1,6 @@
 import { readFile, rm, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
+import { join } from 'node:path'
 import { rolldown } from 'rolldown'
 import { dts } from 'rolldown-plugin-dts'
 import ts from 'typescript'
@@ -10,102 +11,37 @@ const pkg = require('../package.json')
 
 const banner = `/*! ${pkg.name} ${pkg.version} https://github.com/${pkg.repository} @license ${pkg.license} */`
 
-const common = {
-  configFile: false,
-  logLevel: 'info',
-  build: {
-    outDir: 'dist',
-    emptyOutDir: false,
-    sourcemap: true
-  }
-}
+// CJS bundles entities because newer versions no longer provide CJS exports.
+const dependencies = Object.keys(pkg.dependencies)
+const formats = [
+  { format: 'cjs', file: 'markdown-it.cjs.js', target: 'es2015' },
+  { format: 'es', file: 'markdown-it.mjs', target: 'es2018' },
+  { format: 'umd', file: 'markdown-it.umd.min.js', target: 'es2015', browser: true },
+  { format: 'es', file: 'markdown-it.esm.min.mjs', target: 'es2018', browser: true }
+]
 
 await rm('dist', { recursive: true, force: true })
 
-await build({
-  ...common,
-  build: {
-    ...common.build,
-    target: 'es2015',
-    minify: false,
-    lib: {
-      entry: 'src/index.ts',
-      formats: ['cjs'],
-      fileName: () => 'markdown-it.cjs.js'
-    },
-    rolldownOptions: {
-      // Bundle entities into CJS because newer versions no longer provide CJS exports.
-      external: Object.keys(pkg.dependencies).filter(name => name !== 'entities'),
-      output: {
-        banner
-      }
-    }
-  }
-})
+for (const { format, file, target, browser = false } of formats) {
+  const external = browser ? [] : dependencies.filter(name => format !== 'cjs' || name !== 'entities')
+  const name = format === 'umd' ? 'markdownit' : undefined
 
-await build({
-  ...common,
-  build: {
-    ...common.build,
-    target: 'es2018',
-    minify: false,
-    lib: {
-      entry: 'src/index.ts',
-      formats: ['es'],
-      fileName: () => 'markdown-it.mjs'
-    },
-    rolldownOptions: {
-      external: Object.keys(pkg.dependencies),
-      output: {
-        banner
+  for (const [directory, syntax] of [['dist', target], ['dist/modern', 'es2022']]) {
+    await build({
+      configFile: false,
+      logLevel: 'info',
+      build: {
+        outDir: browser ? join(directory, 'browser') : directory,
+        emptyOutDir: false,
+        sourcemap: true,
+        target: syntax,
+        minify: browser,
+        lib: { entry: 'src/index.ts', name, formats: [format], fileName: () => file },
+        rolldownOptions: { external, output: { banner, name } }
       }
-    }
+    })
   }
-})
-
-await build({
-  ...common,
-  build: {
-    ...common.build,
-    target: 'es2015',
-    outDir: 'dist/browser',
-    minify: true,
-    lib: {
-      entry: 'src/index.ts',
-      name: 'markdownit',
-      formats: ['umd'],
-      fileName: () => 'markdown-it.umd.min.js'
-    },
-    rolldownOptions: {
-      external: [],
-      output: {
-        banner,
-        name: 'markdownit'
-      }
-    }
-  }
-})
-
-await build({
-  ...common,
-  build: {
-    ...common.build,
-    target: 'es2018',
-    outDir: 'dist/browser',
-    minify: true,
-    lib: {
-      entry: 'src/index.ts',
-      formats: ['es'],
-      fileName: () => 'markdown-it.esm.min.mjs'
-    },
-    rolldownOptions: {
-      external: [],
-      output: {
-        banner
-      }
-    }
-  }
-})
+}
 
 // ESM types, bundled into a single .d.mts
 const dtsBundle = await rolldown({

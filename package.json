@@ -46,6 +46,27 @@
       },
       "default": "./dist/browser/markdown-it.umd.min.js"
     },
+    "./modern": {
+      "import": {
+        "types": "./dist/markdown-it.d.mts",
+        "default": "./dist/modern/markdown-it.mjs"
+      },
+      "require": {
+        "types": "./dist/markdown-it.d.cts",
+        "default": "./dist/modern/markdown-it.cjs.js"
+      }
+    },
+    "./modern/browser": {
+      "import": {
+        "types": "./dist/markdown-it.d.mts",
+        "default": "./dist/modern/browser/markdown-it.esm.min.mjs"
+      },
+      "require": {
+        "types": "./dist/markdown-it.d.cts",
+        "default": "./dist/modern/browser/markdown-it.umd.min.js"
+      },
+      "default": "./dist/modern/browser/markdown-it.umd.min.js"
+    },
     "./package.json": "./package.json"
   },
   "bin": {

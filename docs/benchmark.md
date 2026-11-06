@@ -29,3 +29,10 @@ Sample: README.md (7774 bytes)
 As you can see, `markdown-it` doesn't pay with speed for its flexibility.
 Slowdown of "full" version caused by additional features not available in
 other implementations.
+
+## Distribution builds
+
+Run `npm run build && node benchmark/dist.mjs` to compare the default and
+ES2022 packages in Node. The input is one paragraph with 8,000 lines. Each
+line break produces a token, so this measures a token-heavy workload; results
+for other inputs and JavaScript engines may differ.

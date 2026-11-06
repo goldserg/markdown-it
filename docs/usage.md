@@ -15,6 +15,13 @@ const md = new MarkdownIt()
 const result = md.render('# markdown-it rulezz!');
 ```
 
+For an ES2022 runtime, import or require `markdown-it/modern` to use native
+class fields when creating tokens. For a self-contained browser build, use
+`markdown-it/modern/browser` (ES module or UMD). Both use the same API and
+TypeScript declarations as `markdown-it`. Keep the final bundler target at ES2022
+or newer to preserve native fields. Plugins that check token constructors should
+use the parser instance they receive. [Compare the builds](benchmark.md#distribution-builds).
+
 Browser with UMD build, added to `window` on script load:
 
 ```js
